@@ -95,8 +95,24 @@ void AMainManager::EndGame()
 	_bIsGameActive = DEACTIVATED;
 	_World->GetTimerManager().ClearTimer(_TileMovingTimer);
 
+	if (_EndGameWidget)
+	{
+		_EndGameWidget->AddToViewport();
+		FInputModeUIOnly Mode;
+		Mode.SetWidgetToFocus(_EndGameWidget->GetCachedWidget());
+		_Controller->SetInputMode(Mode);
+		_Controller->bShowMouseCursor = true;
+		/**/
+	}
+	else
+	{
+		UE_LOG(LogMainManager, Error, TEXT("Widget not found. (MainManager.cpp | AMainManager::EndGame)"));
+	}
+
+	/*
 	FString DisplayMessage = FString::Printf(TEXT("Game over! Your Score is: %d"), _Score);
 	GEngine->AddOnScreenDebugMessage(2, 10.0f, FColor::Red, DisplayMessage, true, FVector2D(3.0f, 3.0f));
+	*/
 }
 
 bool AMainManager::IsGameEnded()
@@ -378,6 +394,13 @@ void AMainManager::HandleMovementFrontBack(float Delta)
 float AMainManager::GetTimerRate() const
 {
 	return _TimerRate;
+}
+
+// ================================= Setters ================================= //
+
+void AMainManager::SetController(APlayerController* Controller)
+{
+	_Controller = Controller;
 }
 
 //###############################################################################################\\

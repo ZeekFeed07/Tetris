@@ -2,7 +2,7 @@
 
 AMainManagerController::AMainManagerController()
 {
-	Name = FString("asdasda");
+
 }
 
 void AMainManagerController::BeginPlay()
@@ -12,7 +12,7 @@ void AMainManagerController::BeginPlay()
 	TetrisManager = Cast<AMainManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AMainManager::StaticClass()));
 	if (TetrisManager)
 	{
-		
+		TetrisManager->SetController(this);
 	}
 	else
 	{
@@ -58,15 +58,4 @@ void AMainManagerController::Movement_WS(float Delta)
 	{
 		TetrisManager->HandleMovementFrontBack(Delta);
 	}
-
-
-
-
-
-
-	//if (Delta < 0 && TickCounter2 > 4)
-	//{
-	//	TetrisManager->HandleMovementFrontBack(Delta);
-	//	TickCounter2 = 0;
-	//}
 }

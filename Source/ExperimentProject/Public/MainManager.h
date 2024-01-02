@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "BaseGeometry.h"
 #include "Chaos/Pair.h"
+#include "Blueprint/UserWidget.h"
+#include "Runtime/UMG/Public/UMG.h"
 
 #include "MainManager.generated.h"
 
@@ -78,6 +80,9 @@ public:	// Public Methods
 	// ===================== Getters ===================== //
 	virtual float GetTimerRate() const;
 
+	// ===================== Setters ===================== //
+	virtual void SetController(APlayerController* Controller);
+
 private: // Private Methods
 	void PrintFieldInLog() const;
 
@@ -108,11 +113,15 @@ private: // Private Variables
 	UPROPERTY(EditInstanceOnly, Category = "Main Settings")
 	TArray<UMaterialInterface*> _ListOfMaterials;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	UUserWidget* _EndGameWidget;
+
 	const int32 FigureTypeNum = 7;
 
 	const float _BottomLine = 50;
 
 	UWorld* _World;
+	APlayerController* _Controller = nullptr;
 	FTimerHandle _TileMovingTimer;
 	
 	// Массив содержащий всю фигуру

@@ -15,8 +15,6 @@ class EXPERIMENTPROJECT_API AMainManagerController : public APlayerController
 public:
 	AMainManagerController();
 
-	FString Name;
-
 protected: // Protected Methods
 	virtual void BeginPlay() override;
 

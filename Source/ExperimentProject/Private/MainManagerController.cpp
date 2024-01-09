@@ -31,6 +31,9 @@ void AMainManagerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
+	//SetIgnoreLookInput(false);
+	InputComponent->ClearAxisBindings();
+
 	InputComponent->BindAxis("MovementSideways", this, &AMainManagerController::Movement_AD);
 	InputComponent->BindAxis("MovementFrontBack", this, &AMainManagerController::Movement_WS);
 	//UE_LOG(LogMainManager, Display, TEXT("%d"), TickCounter)

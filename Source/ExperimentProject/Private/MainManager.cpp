@@ -108,11 +108,6 @@ void AMainManager::EndGame()
 	{
 		UE_LOG(LogMainManager, Error, TEXT("Widget not found. (MainManager.cpp | AMainManager::EndGame)"));
 	}
-
-	/*
-	FString DisplayMessage = FString::Printf(TEXT("Game over! Your Score is: %d"), _Score);
-	GEngine->AddOnScreenDebugMessage(2, 10.0f, FColor::Red, DisplayMessage, true, FVector2D(3.0f, 3.0f));
-	*/
 }
 
 bool AMainManager::IsGameEnded()

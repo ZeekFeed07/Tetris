@@ -26,6 +26,11 @@ protected: // Protected Methods
 
 	virtual void Movement_WS(float Delta);
 
+public:
+
+	UFUNCTION(BlueprintCallable)
+	AMainManager* GetManager();
+
 protected: // Protected Variables
 	
 	AMainManager* TetrisManager;

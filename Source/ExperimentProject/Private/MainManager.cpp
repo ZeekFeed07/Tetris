@@ -66,7 +66,10 @@ void AMainManager::Tick(float DeltaTime)
 
 	if (_bIsGameActive)
 	{
-		GEngine->AddOnScreenDebugMessage(1, _TimerRate, FColor::Orange, FString::Printf(TEXT("Score: %d"), _Score), true, FVector2D(2.0f, 2.0f));
+		//float Seconds = UGameplayStatics::GetRealTimeSeconds(_World);
+		//GEngine->AddOnScreenDebugMessage(1, _TimerRate, FColor::Orange, FString::Printf(TEXT("Time: %d"), _ResultData.Score), true, FVector2D(2.0f, 2.0f));
+		//float Seconds = _World->GetTime().GetWorldTimeSeconds();
+		//GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, FString::Printf(TEXT("Time: %d"), Seconds), true, FVector2D(2.0f, 2.0f));
 	}
 }
 
@@ -82,6 +85,7 @@ void AMainManager::StartGame(const FString PlayerName)
 
 		// Тайминг движения
 		_World->GetTimerManager().SetTimer(_TileMovingTimer, this, &AMainManager::DropFigure, _TimerRate, true);
+		_World->GetTimerManager().SetTimer(_TimeCountingTimer, this, &AMainManager::IncreaseTimer, 1.0f, true);
 	}
 	else
 	{
@@ -94,15 +98,18 @@ void AMainManager::EndGame()
 {
 	_bIsGameActive = DEACTIVATED;
 	_World->GetTimerManager().ClearTimer(_TileMovingTimer);
+	_World->GetTimerManager().ClearTimer(_TimeCountingTimer);
+
+	_ResultData.GameTime = _Seconds;
+	_Seconds = 0;	
 
 	if (_EndGameWidget)
 	{
 		_EndGameWidget->AddToViewport();
 		FInputModeUIOnly Mode;
-		Mode.SetWidgetToFocus(_EndGameWidget->GetCachedWidget());
+		//Mode.SetWidgetToFocus(_EndGameWidget->GetCachedWidget()); // Вызывает ошибку что нельзя сфокусироваться на данном виджете
 		_Controller->SetInputMode(Mode);
 		_Controller->bShowMouseCursor = true;
-		/**/
 	}
 	else
 	{
@@ -160,6 +167,9 @@ void AMainManager::AddFigureToField(const Coord StartCoords)
 
 void AMainManager::DropFigure()
 {
+	//float Seconds = _World->GetTime().GetWorldTimeSeconds();
+	GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, FString::Printf(TEXT("Time: %i"), _Seconds), true, FVector2D(2.0f, 2.0f));
+
 	InitMovement(0, 0, CLEAR);
 	if (!IsIntersect(EFigureDirection::BOTTOM))
 	{
@@ -172,24 +182,21 @@ void AMainManager::DropFigure()
 		InitMovement(0, 0, INITIALIZE);
 
 		CheckAndClearLine();
-		//UpdateFigure();
-
 
 		_FigureCoords.Empty();
 		_CurrentFigure.Empty();
 
-		if (_bIsGameActive = !IsGameEnded())
+		if ((_bIsGameActive = !IsGameEnded()) != 0)
 		{
 			SelectFigure(RandomFigure(), EFigureDirection::TOP);
 		}
-		else
+		else // TODO: никогда не происходит
 		{
 			UE_LOG(LogMainManager, Display, TEXT("The End"))
 		}
 
 	}
 	UpdateFigure();
-	//PrintFieldInLog();
 }
 
 // Проверка на пересечение с границей или объектом в зависимости от направления
@@ -311,12 +318,12 @@ void AMainManager::SelectFigure(const EFigureType Type, const EFigureDirection D
 
 void AMainManager::IncreaseScore(const int32 NumToIncrease)
 {
-	_Score += NumToIncrease;
+	_ResultData.Score += NumToIncrease;
 }
 
 EFigureType AMainManager::RandomFigure()
 {
-	int32 RandInt = FMath::Rand() % FigureTypeNum;
+	int32 RandInt = FMath::Rand() % _FigureTypeNum;
 
 	switch (RandInt)
 	{
@@ -389,6 +396,11 @@ void AMainManager::HandleMovementFrontBack(float Delta)
 float AMainManager::GetTimerRate() const
 {
 	return _TimerRate;
+}
+
+FStatData AMainManager::GetResultData() const
+{
+	return _ResultData;
 }
 
 // ================================= Setters ================================= //
@@ -506,6 +518,15 @@ void AMainManager::DropField(int32 Line)
 	}
 }
 
+void AMainManager::IncreaseTimer()
+{
+	++_Seconds;
+}
+
+//###############################################################################################\\
+//######################################## Extras ###############################################\\
+//###############################################################################################\\
+
 Coord RotateCoord(Coord C1, Coord C2, float Angle)
 {
 	int32 ResCos = FMath::RoundToFloat(FMath::Cos(Angle));
@@ -513,7 +534,8 @@ Coord RotateCoord(Coord C1, Coord C2, float Angle)
 
 	Coord Tmp = Coord();
 	Coord C3 = Coord(C1.First - C2.First, C1.Second - C2.Second);
-
+	
+	// Матрица вращения
 	Tmp.First  =  C3.First * ResCos + C3.Second * ResSin;
 	Tmp.Second = -C3.First * ResSin + C3.Second * ResCos;
 

@@ -31,9 +31,6 @@ void AMainManagerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	//SetIgnoreLookInput(false);
-	InputComponent->ClearAxisBindings();
-
 	InputComponent->BindAxis("MovementSideways", this, &AMainManagerController::Movement_AD);
 	InputComponent->BindAxis("MovementFrontBack", this, &AMainManagerController::Movement_WS);
 	//UE_LOG(LogMainManager, Display, TEXT("%d"), TickCounter)
@@ -61,4 +58,9 @@ void AMainManagerController::Movement_WS(float Delta)
 	{
 		TetrisManager->HandleMovementFrontBack(Delta);
 	}
+}
+
+AMainManager* AMainManagerController::GetManager()
+{
+	return TetrisManager;
 }

@@ -38,6 +38,18 @@ enum class EFigureDirection : uint8
 	LEFT
 };
 
+USTRUCT(Blueprintable)
+struct FStatData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	float GameTime = 0.f;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Score = 0;
+};
+
 UCLASS()
 class EXPERIMENTPROJECT_API AMainManager : public AActor
 {
@@ -78,8 +90,11 @@ public:	// Public Methods
 	virtual void HandleMovementFrontBack(float Delta);
 
 	// ===================== Getters ===================== //
+	UFUNCTION(BlueprintCallable)
 	virtual float GetTimerRate() const;
 
+	UFUNCTION(BlueprintCallable)
+	virtual FStatData GetResultData() const;
 	// ===================== Setters ===================== //
 	virtual void SetController(APlayerController* Controller);
 
@@ -94,9 +109,9 @@ private: // Private Methods
 
 	virtual void DropField(int32 Line);
 
+	void IncreaseTimer();
+
 private: // Private Variables
-	UPROPERTY(EditAnywhere, Category = "Main Settings")
-	int32 _Score = 0;
 
 	UPROPERTY(VisibleAnywhere, Category = "Main Settings")
 	bool _bIsGameActive = ACTIVATED;
@@ -116,13 +131,19 @@ private: // Private Variables
 	UPROPERTY(EditAnywhere, Category = "UI")
 	UUserWidget* _EndGameWidget;
 
-	const int32 FigureTypeNum = 7;
+	FStatData _ResultData;
 
+	const int32 _FigureTypeNum = 7;
+	
 	const float _BottomLine = 50;
 
 	UWorld* _World;
 	APlayerController* _Controller = nullptr;
+
 	FTimerHandle _TileMovingTimer;
+	FTimerHandle _TimeCountingTimer;
+
+	int32 _Seconds = 0;
 	
 	// Массив содержащий всю фигуру
 	TArray<ABaseGeometry*> _CurrentFigure;

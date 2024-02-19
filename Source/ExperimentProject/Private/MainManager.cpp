@@ -66,6 +66,10 @@ void AMainManager::Tick(float DeltaTime)
 
 	if (_bIsGameActive)
 	{
+		int32 a = _Seconds % 10;
+		FString b = FString::FromInt(a);
+		GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, b, true, FVector2D(2.0f, 2.0f));
+
 		//float Seconds = UGameplayStatics::GetRealTimeSeconds(_World);
 		//GEngine->AddOnScreenDebugMessage(1, _TimerRate, FColor::Orange, FString::Printf(TEXT("Time: %d"), _ResultData.Score), true, FVector2D(2.0f, 2.0f));
 		//float Seconds = _World->GetTime().GetWorldTimeSeconds();
@@ -166,10 +170,8 @@ void AMainManager::AddFigureToField(const Coord StartCoords)
 }
 
 void AMainManager::DropFigure()
-{
-	//float Seconds = _World->GetTime().GetWorldTimeSeconds();
-	GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, FString::Printf(TEXT("Time: %i"), _Seconds), true, FVector2D(2.0f, 2.0f));
-
+{	
+	PrintFieldInLog();
 	InitMovement(0, 0, CLEAR);
 	if (!IsIntersect(EFigureDirection::BOTTOM))
 	{
@@ -417,7 +419,6 @@ void AMainManager::SetController(APlayerController* Controller)
 void AMainManager::PrintFieldInLog() const
 {
 	UE_LOG(LogMainManager, Display, TEXT("============================="))
-	//for (int32 i = _HeightOfField - 1; i >= 0; --i)
 	for (int32 i = 0; i < _HeightOfField; ++i)
 	{
 		FString str = "";

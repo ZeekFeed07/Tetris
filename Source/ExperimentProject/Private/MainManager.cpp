@@ -24,7 +24,7 @@ AMainManager::AMainManager()
 	for (int32 i = 0; i < _WidthOfField; ++i) _FieldOfGeometry[i].SetNum(_HeightOfField);
 
 	// Инициализация первого материала
-	UMaterialInterface* MainMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Materials/MI_BaseGeometry_Blue.MI_BaseGeometry_Blue'"));
+	UMaterialInterface* MainMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Materials/MI_MainColor_Blue.MI_MainColor_Blue'"));
 	if (MainMaterial)
 	{
 		_ListOfMaterials.Add(MainMaterial);
@@ -68,7 +68,7 @@ void AMainManager::Tick(float DeltaTime)
 	{
 		int32 a = _Seconds % 10;
 		FString b = FString::FromInt(a);
-		GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, b, true, FVector2D(2.0f, 2.0f));
+		//GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, b, true, FVector2D(2.0f, 2.0f));
 
 		//float Seconds = UGameplayStatics::GetRealTimeSeconds(_World);
 		//GEngine->AddOnScreenDebugMessage(1, _TimerRate, FColor::Orange, FString::Printf(TEXT("Time: %d"), _ResultData.Score), true, FVector2D(2.0f, 2.0f));
@@ -88,7 +88,7 @@ void AMainManager::StartGame(const FString PlayerName)
 		SelectFigure(_FirstFigure, EFigureDirection::TOP);
 
 		// Тайминг движения
-		_World->GetTimerManager().SetTimer(_TileMovingTimer, this, &AMainManager::DropFigure, _TimerRate, true);
+		_World->GetTimerManager().SetTimer(_TileMovingTimer, this, &AMainManager::DropFigure, _DropTimerRate, true);
 		_World->GetTimerManager().SetTimer(_TimeCountingTimer, this, &AMainManager::IncreaseTimer, 1.0f, true);
 	}
 	else
@@ -146,7 +146,7 @@ void AMainManager::AddFigureToField(const Coord StartCoords)
 	int32 Y = StartCoords.First;
 	int32 Z = StartCoords.Second;
 
-	int32 RandElem = FMath::Rand() % _ListOfMaterials.Num();
+	int32 RandElem = _ListOfMaterials.Num() > 0 ? FMath::Rand() % _ListOfMaterials.Num() : 0;
 	
 	for (auto& CoordsElem : _FigureCoords)
 	{
@@ -155,7 +155,9 @@ void AMainManager::AddFigureToField(const Coord StartCoords)
 
 		FActorSpawnParameters Param; Param.Owner = this;
 		ABaseGeometry* SpawnedFigure = _World->SpawnActor<ABaseGeometry>(Param);
+
 		SpawnedFigure->SetMainMaterial(_ListOfMaterials[RandElem]);
+		SpawnedFigure->MainMesh->SetStaticMesh(_BaseGeometryMesh);
 
 		_FieldOfGeometry[Y + DeltaY][Z + DeltaZ] = SpawnedFigure;
 		_CurrentFigure.Add(SpawnedFigure);
@@ -171,7 +173,6 @@ void AMainManager::AddFigureToField(const Coord StartCoords)
 
 void AMainManager::DropFigure()
 {	
-	PrintFieldInLog();
 	InitMovement(0, 0, CLEAR);
 	if (!IsIntersect(EFigureDirection::BOTTOM))
 	{
@@ -241,6 +242,7 @@ bool AMainManager::IsIntersect(EFigureDirection MovingDirection)
 	return false;
 }
 
+// Создание координат новой фигуры 
 void AMainManager::SelectFigure(const EFigureType Type, const EFigureDirection Direction)
 {
 	int32 ActualPosY = _SpawnCoordinates.Y / ABaseGeometry::Size;
@@ -359,7 +361,8 @@ EFigureType AMainManager::RandomFigure()
 	return EFigureType::SQUARE;
 }
 
-// =================================События нажатия кнопок ================================= //
+// ================================= Events ================================= //
+// Имплементация движения по сторонам
 void AMainManager::HandleMovementSideways(float Delta)
 {
 	if (!Delta) return;
@@ -373,31 +376,43 @@ void AMainManager::HandleMovementSideways(float Delta)
 
 	UpdateFigure();
 }
-	
-void AMainManager::HandleMovementFrontBack(float Delta)
-{
-	if (!Delta) return;
-	int32 Sgn = FMath::Sign(Delta);
 
+// Имплементация движения вперёд и назад
+void AMainManager::HandleMovementBottom(float Delta)
+{
 	InitMovement(0, 0, CLEAR);
-	if (Sgn > 0 && !IsIntersect(EFigureDirection::BOTTOM))
+
+	if (!IsIntersect(EFigureDirection::BOTTOM))
 	{
-		InitMovement(0, Sgn, INITIALIZE);
-	}
-	else if(Sgn < 0)
-	{
-		CheckAndRotate();
-		InitMovement(0, 0, INITIALIZE);
+		InitMovement(0, Delta / FMath::Abs(Delta), INITIALIZE);
 	}
 
 	UpdateFigure();
 }
 
+void AMainManager::HandleMovementRotate()
+{
+	InitMovement(0, 0, CLEAR);
+	CheckAndRotate();
+	InitMovement(0, 0, INITIALIZE);
+	UpdateFigure();
+}
+
 // ================================= Getters ================================= //
 
-float AMainManager::GetTimerRate() const
+float AMainManager::GetDropTimerRate() const
 {
-	return _TimerRate;
+	return _DropTimerRate;
+}
+
+float AMainManager::GetMovingDelta() const
+{
+	return _MovingDelta;
+}
+
+float AMainManager::GetDroppingDelta() const
+{
+	return _DroppingDelta;
 }
 
 FStatData AMainManager::GetResultData() const
@@ -433,6 +448,7 @@ void AMainManager::PrintFieldInLog() const
 	UE_LOG(LogMainManager, Display, TEXT("============================="))
 }
 
+// Инициализация/Удаление фигуры в сетке координат _FigureCoords со сдвигом на <Y, Z> 
 void AMainManager::InitMovement(int32 DeltaY, int32 DeltaZ, bool bIsVanish)
 {
 	for (int32 i = 0; i < _CurrentFigure.Num(); ++i)

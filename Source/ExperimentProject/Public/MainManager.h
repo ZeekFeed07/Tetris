@@ -87,11 +87,19 @@ public:	// Public Methods
 
 	virtual void HandleMovementSideways(float Delta);
 
-	virtual void HandleMovementFrontBack(float Delta);
+	virtual void HandleMovementBottom(float Delta);
+
+	virtual void HandleMovementRotate();
 
 	// ===================== Getters ===================== //
 	UFUNCTION(BlueprintCallable)
-	virtual float GetTimerRate() const;
+	virtual float GetDropTimerRate() const;
+
+	UFUNCTION(BlueprintCallable)
+	virtual float GetMovingDelta() const;
+
+	UFUNCTION(BlueprintCallable)
+	virtual float GetDroppingDelta() const;
 
 	UFUNCTION(BlueprintCallable)
 	virtual FStatData GetResultData() const;
@@ -117,7 +125,13 @@ private: // Private Variables
 	bool _bIsGameActive = ACTIVATED;
 
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
-	float _TimerRate = 1.0f;
+	float _DropTimerRate = 1.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Main Settings")
+	float _DroppingDelta = .3f;
+
+	UPROPERTY(EditAnywhere, Category = "Main Settings")
+	float _MovingDelta = .3f;
 
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
 	EFigureType _FirstFigure = EFigureType::SQUARE;
@@ -127,6 +141,9 @@ private: // Private Variables
 
 	UPROPERTY(EditInstanceOnly, Category = "Main Settings")
 	TArray<UMaterialInterface*> _ListOfMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Main Settings")
+	UStaticMesh* _BaseGeometryMesh;
 
 	UPROPERTY(EditAnywhere, Category = "UI")
 	UUserWidget* _EndGameWidget;

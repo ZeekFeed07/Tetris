@@ -8,11 +8,11 @@ ABaseGeometry::ABaseGeometry()
 	MainMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main"));
 	SetRootComponent(MainMesh);
 
-	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshCube(TEXT("/Script/Engine.StaticMesh'/Game/Meshes/Tile.Tile'"));
+	/*ConstructorHelpers::FObjectFinder<UStaticMesh> MeshCube(TEXT("/Script/Engine.StaticMesh'/Game/Meshes/BaseCube.BaseCube'"));
 	if (MeshCube.Succeeded())
 	{
 		MainMesh->SetStaticMesh(MeshCube.Object);
-	}
+	}*/
 }
 
 void ABaseGeometry::BeginPlay()

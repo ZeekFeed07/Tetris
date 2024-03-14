@@ -15,7 +15,7 @@ class EXPERIMENTPROJECT_API AMainManagerController : public APlayerController
 public:
 	AMainManagerController();
 
-protected: // Protected Methods
+protected:
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
@@ -24,22 +24,21 @@ protected: // Protected Methods
 
 	virtual void Movement_AD(float Delta);
 
-	virtual void Movement_WS(float Delta);
+	virtual void Movement_S(float Delta);
+
+	virtual void Movement_W();
 
 public:
 
 	UFUNCTION(BlueprintCallable)
 	AMainManager* GetManager();
 
-protected: // Protected Variables
+protected:
 	
 	AMainManager* TetrisManager;
 
 private:
-	int32 TickCounter = 0;
-	int32 TickCounter2 = 0;
-
-	float LastLaunchSec = 0;
+	float LastTimeSec = 0;
 
 	const int32 RequiredTickBeforeMove = 3;
 

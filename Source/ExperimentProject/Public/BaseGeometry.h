@@ -24,14 +24,15 @@ public:
 	void SetMainMaterial(UMaterialInterface* Material);
 	void SetPivot(const bool Pivot) { IsPivot = Pivot; }
 	bool GetPivot() const { return IsPivot; }
+
 private:
 	bool IsPivot = false; 
 public:
+	UStaticMeshComponent* MainMesh;
 
 	static constexpr float Size = 100.f;
 	static constexpr float Points = 5.f;
 protected:
-	UStaticMeshComponent* MainMesh;
 
 	UMaterialInterface* _MainMaterial;
 };

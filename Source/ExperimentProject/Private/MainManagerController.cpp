@@ -2,7 +2,6 @@
 
 AMainManagerController::AMainManagerController()
 {
-
 }
 
 void AMainManagerController::BeginPlay()
@@ -23,41 +22,44 @@ void AMainManagerController::BeginPlay()
 void AMainManagerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	++TickCounter;
-	++TickCounter2;
 }
 
 void AMainManagerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
+	LastTimeSec = GetWorld()->GetTimeSeconds();
+
 	InputComponent->BindAxis("MovementSideways", this, &AMainManagerController::Movement_AD);
-	InputComponent->BindAxis("MovementFrontBack", this, &AMainManagerController::Movement_WS);
-	//UE_LOG(LogMainManager, Display, TEXT("%d"), TickCounter)
-	//InputComponent->BindAction("MoveLeft", IE_Pressed, this, &AMainManagerController::MovementHandleLeft);
-	//InputComponent->BindAction("MoveRight", IE_Pressed, this, &AMainManagerController::MovementHandleRight);
+	InputComponent->BindAxis("MovementBottom", this, &AMainManagerController::Movement_S);
+
+	InputComponent->BindAction("RotateInput", IE_Pressed, this, &AMainManagerController::Movement_W);
 }
 
 void AMainManagerController::Movement_AD(float Delta)
 {
-	if (TickCounter > RequiredTickBeforeMove)
+	float DeltaSec = GetWorld()->GetTimeSeconds() - LastTimeSec;
+
+	if (DeltaSec > TetrisManager->GetMovingDelta() && Delta != 0)
 	{
 		TetrisManager->HandleMovementSideways(Delta);
-		TickCounter = 0;
+		LastTimeSec = GetWorld()->GetTimeSeconds();
 	}
 }
-void AMainManagerController::Movement_WS(float Delta)
+void AMainManagerController::Movement_S(float Delta)
 {
-	if (Delta < 0 && GetWorld()->GetTimeSeconds() - LastLaunchSec > 0.3f)
-	{
-		TetrisManager->HandleMovementFrontBack(Delta);
+	float DeltaSec = GetWorld()->GetTimeSeconds() - LastTimeSec;
 
-		LastLaunchSec = GetWorld()->GetTimeSeconds();
-	}
-	else if (Delta >= 0)
+	if (DeltaSec > TetrisManager->GetDroppingDelta() && Delta > 0)
 	{
-		TetrisManager->HandleMovementFrontBack(Delta);
+		TetrisManager->HandleMovementBottom(Delta);
+		LastTimeSec = GetWorld()->GetTimeSeconds();
 	}
+}
+
+void AMainManagerController::Movement_W()
+{
+	TetrisManager->HandleMovementRotate();
 }
 
 AMainManager* AMainManagerController::GetManager()

@@ -48,6 +48,9 @@ struct FStatData
 
 	UPROPERTY(BlueprintReadWrite)
 	int32 Score = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Coins = 0;
 };
 
 UCLASS()
@@ -64,7 +67,7 @@ protected: // Protected Methods
 public:	// Public Methods
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void StartGame(const FString PlayerName);
+	virtual void StartGame();
 
 	virtual void EndGame();
 
@@ -78,6 +81,8 @@ public:	// Public Methods
 	virtual void DropFigure();
 
 	virtual bool IsIntersect(EFigureDirection MovingDirection);
+
+	virtual bool CoordsFromType(EFigureType Type, TArray<Coord>& NewFigure, Coord& Pivot);
 
 	virtual void SelectFigure(const EFigureType Type, const EFigureDirection Direction = EFigureDirection::TOP);
 
@@ -117,12 +122,10 @@ private: // Private Methods
 
 	virtual void DropField(int32 Line);
 
-	void IncreaseTimer();
-
 private: // Private Variables
 
 	UPROPERTY(VisibleAnywhere, Category = "Main Settings")
-	bool _bIsGameActive = ACTIVATED;
+	bool _bIsGameActive = DEACTIVATED;
 
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
 	float _DropTimerRate = 1.0f;
@@ -137,7 +140,10 @@ private: // Private Variables
 	EFigureType _FirstFigure = EFigureType::SQUARE;
 
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
-	FVector _SpawnCoordinates = FVector(0, 400, 1900);
+	FVector _SpawnCoordinates = FVector(0, 400.0f, 1900.0f);
+
+	UPROPERTY(EditAnywhere, Category = "Main Settings")
+	FVector _NextFigurePos = FVector(-80.0f, -600.0f, 1570.0f);
 
 	UPROPERTY(EditInstanceOnly, Category = "Main Settings")
 	TArray<UMaterialInterface*> _ListOfMaterials;
@@ -148,9 +154,15 @@ private: // Private Variables
 	UPROPERTY(EditAnywhere, Category = "UI")
 	UUserWidget* _EndGameWidget;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	UUserWidget* _MainGameplayWidget;
+
 	FStatData _ResultData;
 
 	const int32 _FigureTypeNum = 7;
+
+	EFigureType _CurrentFigureType;
+	EFigureType _NextFigureType;
 	
 	const float _BottomLine = 50;
 
@@ -159,8 +171,6 @@ private: // Private Variables
 
 	FTimerHandle _TileMovingTimer;
 	FTimerHandle _TimeCountingTimer;
-
-	int32 _Seconds = 0;
 	
 	// Массив содержащий всю фигуру
 	TArray<ABaseGeometry*> _CurrentFigure;

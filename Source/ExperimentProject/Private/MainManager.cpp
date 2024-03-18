@@ -19,9 +19,11 @@ AMainManager::AMainManager()
 	// Width = Y
 	// Height = Z
 
+	// Field initialization
 	_FieldOfGeometry.SetNum(_WidthOfField);
-
 	for (int32 i = 0; i < _WidthOfField; ++i) _FieldOfGeometry[i].SetNum(_HeightOfField);
+
+	_NextFigureType = RandomFigure();
 
 	// Инициализация первого материала
 	UMaterialInterface* MainMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Materials/MI_MainColor_Blue.MI_MainColor_Blue'"));
@@ -42,18 +44,7 @@ AMainManager::AMainManager()
 void AMainManager::BeginPlay()
 {
 	Super::BeginPlay();
-
 	_World = GetWorld();
-	FString PlayerName = "Zeek_Feed";
-
-	if (_World)
-	{ 
-		StartGame(PlayerName);
-	}
-	else
-	{
-		UE_LOG(LogMainManager, Error, TEXT("Unable to get access to the World. (MainManager.cpp | AMainManager::BeginPlay)"))
-	}
 }
 
 //###############################################################################################\\
@@ -66,30 +57,32 @@ void AMainManager::Tick(float DeltaTime)
 
 	if (_bIsGameActive)
 	{
-		int32 a = _Seconds % 10;
-		FString b = FString::FromInt(a);
-		//GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, b, true, FVector2D(2.0f, 2.0f));
-
-		//float Seconds = UGameplayStatics::GetRealTimeSeconds(_World);
-		//GEngine->AddOnScreenDebugMessage(1, _TimerRate, FColor::Orange, FString::Printf(TEXT("Time: %d"), _ResultData.Score), true, FVector2D(2.0f, 2.0f));
-		//float Seconds = _World->GetTime().GetWorldTimeSeconds();
-		//GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Orange, FString::Printf(TEXT("Time: %d"), Seconds), true, FVector2D(2.0f, 2.0f));
+		_ResultData.GameTime = _World->GetTimeSeconds();
 	}
+
 }
 
 // Функция запуска игры
-void AMainManager::StartGame(const FString PlayerName)
+void AMainManager::StartGame()
 {
-	_bIsGameActive = ACTIVATED;
-
-	if (_World)
+	if (_World && !_bIsGameActive)
 	{
+		_bIsGameActive = ACTIVATED;
+
+		if (_MainGameplayWidget)
+		{
+			_MainGameplayWidget->AddToViewport();
+		}
+
 		// Создание фигуры и имплементация её движения
 		SelectFigure(_FirstFigure, EFigureDirection::TOP);
 
 		// Тайминг движения
 		_World->GetTimerManager().SetTimer(_TileMovingTimer, this, &AMainManager::DropFigure, _DropTimerRate, true);
-		_World->GetTimerManager().SetTimer(_TimeCountingTimer, this, &AMainManager::IncreaseTimer, 1.0f, true);
+	}
+	else if (_bIsGameActive)
+	{
+		UE_LOG(LogMainManager, Warning, TEXT("The game is already starrted"))
 	}
 	else
 	{
@@ -102,16 +95,11 @@ void AMainManager::EndGame()
 {
 	_bIsGameActive = DEACTIVATED;
 	_World->GetTimerManager().ClearTimer(_TileMovingTimer);
-	_World->GetTimerManager().ClearTimer(_TimeCountingTimer);
-
-	_ResultData.GameTime = _Seconds;
-	_Seconds = 0;	
 
 	if (_EndGameWidget)
 	{
 		_EndGameWidget->AddToViewport();
 		FInputModeUIOnly Mode;
-		//Mode.SetWidgetToFocus(_EndGameWidget->GetCachedWidget()); // Вызывает ошибку что нельзя сфокусироваться на данном виджете
 		_Controller->SetInputMode(Mode);
 		_Controller->bShowMouseCursor = true;
 	}
@@ -181,6 +169,8 @@ void AMainManager::DropFigure()
 	}
 	else
 	{
+		// Увеличение очков при каждом приземлении
+		IncreaseScore(25);
 		// Возвращение указателей после зануления при приземлении
 		InitMovement(0, 0, INITIALIZE);
 
@@ -189,9 +179,11 @@ void AMainManager::DropFigure()
 		_FigureCoords.Empty();
 		_CurrentFigure.Empty();
 
-		if ((_bIsGameActive = !IsGameEnded()) != 0)
+		if ((_bIsGameActive = !IsGameEnded()) != 0) //*
 		{
-			SelectFigure(RandomFigure(), EFigureDirection::TOP);
+			_CurrentFigureType = _NextFigureType;
+			_NextFigureType = RandomFigure();
+			SelectFigure(_CurrentFigureType, EFigureDirection::TOP);
 		}
 		else // TODO: никогда не происходит
 		{
@@ -242,79 +234,93 @@ bool AMainManager::IsIntersect(EFigureDirection MovingDirection)
 	return false;
 }
 
-// Создание координат новой фигуры 
-void AMainManager::SelectFigure(const EFigureType Type, const EFigureDirection Direction)
+// Получение координат фигуры по её типу
+bool AMainManager::CoordsFromType(EFigureType Type, TArray<Coord>& NewFigure, Coord& Pivot)
 {
-	int32 ActualPosY = _SpawnCoordinates.Y / ABaseGeometry::Size;
-	// Создание силуета фигуры
+	bool flag = true;
 	switch (Type)
 	{
 	case EFigureType::SQUARE:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(0, 0);
-		_FigureCoords[1] = _CurrFigurePivot = Coord(0, 1);
-		_FigureCoords[2] = Coord(1, 0);
-		_FigureCoords[3] = Coord(1, 1);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(0, 0);
+		NewFigure[1] = Pivot = Coord(0, 1);
+		NewFigure[2] = Coord(1, 0);
+		NewFigure[3] = Coord(1, 1);
 		break;
 	case EFigureType::UNDERLINE:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(0, 0);
-		_FigureCoords[1] = _CurrFigurePivot = Coord(1, 0);
-		_FigureCoords[2] = Coord(2, 0);
-		_FigureCoords[3] = Coord(3, 0);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(0, 0);
+		NewFigure[1] = Pivot = Coord(1, 0);
+		NewFigure[2] = Coord(2, 0);
+		NewFigure[3] = Coord(3, 0);
 		break;
 	case EFigureType::THREESIDE:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(1, 0);
-		_FigureCoords[1] = Coord(0, 1);
-		_FigureCoords[2] = _CurrFigurePivot = Coord(1, 1);
-		_FigureCoords[3] = Coord(2, 1);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(1, 0);
+		NewFigure[1] = Coord(0, 1);
+		NewFigure[2] = Pivot = Coord(1, 1);
+		NewFigure[3] = Coord(2, 1);
 		break;
 	case EFigureType::Z_TYPE:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(0, 0);
-		_FigureCoords[1] = _CurrFigurePivot = Coord(1, 0);
-		_FigureCoords[2] = Coord(1, 1);
-		_FigureCoords[3] = Coord(2, 1);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(0, 0);
+		NewFigure[1] = Pivot = Coord(1, 0);
+		NewFigure[2] = Coord(1, 1);
+		NewFigure[3] = Coord(2, 1);
 		break;
 	case EFigureType::Z_TYPE_M:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(0, 1);
-		_FigureCoords[1] = _CurrFigurePivot = Coord(1, 0);
-		_FigureCoords[2] = Coord(1, 1);
-		_FigureCoords[3] = Coord(2, 0);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(0, 1);
+		NewFigure[1] = Pivot = Coord(1, 0);
+		NewFigure[2] = Coord(1, 1);
+		NewFigure[3] = Coord(2, 0);
 		break;
 	case EFigureType::L_TYPE:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(0, 0);
-		_FigureCoords[1] = _CurrFigurePivot = Coord(0, 1);
-		_FigureCoords[2] = Coord(1, 1);
-		_FigureCoords[3] = Coord(2, 1);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(0, 0);
+		NewFigure[1] = Pivot = Coord(0, 1);
+		NewFigure[2] = Coord(1, 1);
+		NewFigure[3] = Coord(2, 1);
 		break;
 	case EFigureType::L_TYPE_M:
-		_FigureCoords.SetNum(4);
-		_FigureCoords[0] = Coord(2, 0);
-		_FigureCoords[1] = Coord(0, 1);
-		_FigureCoords[2] = Coord(1, 1);
-		_FigureCoords[3] = _CurrFigurePivot = Coord(2, 1);
+		NewFigure.SetNum(4);
+		NewFigure[0] = Coord(2, 0);
+		NewFigure[1] = Coord(0, 1);
+		NewFigure[2] = Coord(1, 1);
+		NewFigure[3] = Pivot = Coord(2, 1);
 		break;
 	default:
-		UE_LOG(LogMainManager, Error, TEXT("Unexpected type of EFigureType. (MainManager.cpp | AMainManager::SelectFigure)"))
-		return;
+		UE_LOG(LogMainManager, Error, TEXT("Unexpected type of EFigureType. (MainManager.cpp | AMainManager::CoordsFromType)"))
+		flag = false;
 	}
 
-	_CurrFigurePivot.First += ActualPosY;
+	return flag;
+}
 
-
-	for (auto& CoordElem : _FigureCoords)
+// Настройка фигуры перед размещением
+void AMainManager::SelectFigure(const EFigureType Type, const EFigureDirection Direction)
+{
+	int32 ActualPosY = _SpawnCoordinates.Y / ABaseGeometry::Size;
+	
+	bool IsCreated = CoordsFromType(Type, _FigureCoords, _CurrFigurePivot);
+	
+	if (IsCreated)
 	{
-		CoordElem.First += ActualPosY;
-		if (_FieldOfGeometry[CoordElem.First][CoordElem.Second])
-		{
-			EndGame();
+		_CurrFigurePivot.First += ActualPosY;
 
-			return;
+		for (auto& CoordElem : _FigureCoords)
+		{
+			CoordElem.First += ActualPosY;
+			if (_FieldOfGeometry[CoordElem.First][CoordElem.Second])
+			{
+				EndGame();
+				return;
+			}
 		}
+	}
+	else
+	{
+		UE_LOG(LogMainManager, Warning, TEXT("The Figure has not been created. (MainManager.cpp | AMainManager::SelectFigure)"))
 	}
 
 	AddFigureToField();
@@ -322,7 +328,8 @@ void AMainManager::SelectFigure(const EFigureType Type, const EFigureDirection D
 
 void AMainManager::IncreaseScore(const int32 NumToIncrease)
 {
-	_ResultData.Score += NumToIncrease;
+	_ResultData.Score += NumToIncrease;	
+	_ResultData.Coins = _ResultData.Score / 100;
 }
 
 EFigureType AMainManager::RandomFigure()
@@ -533,11 +540,6 @@ void AMainManager::DropField(int32 Line)
 
 		_FieldOfGeometry[i][0] = nullptr;
 	}
-}
-
-void AMainManager::IncreaseTimer()
-{
-	++_Seconds;
 }
 
 //###############################################################################################\\

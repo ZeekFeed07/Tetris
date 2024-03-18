@@ -17,6 +17,8 @@ void AMainManagerController::BeginPlay()
 	{
 		UE_LOG(LogMainManager, Error, TEXT("Tetris Manager doesn't exist. (MainManagerController.cpp | AMainManagerController::AMainManagerController"))
 	}
+
+	TetrisManager->StartGame();
 }
 
 void AMainManagerController::Tick(float DeltaTime)

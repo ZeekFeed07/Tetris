@@ -16,7 +16,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -28,6 +27,7 @@ public:
 private:
 	bool IsPivot = false; 
 public:
+	UPROPERTY(BlueprintReadWrite, Category = "Mesh")
 	UStaticMeshComponent* MainMesh;
 
 	static constexpr float Size = 100.f;

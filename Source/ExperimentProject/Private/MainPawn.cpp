@@ -4,7 +4,7 @@ AMainPawn::AMainPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Для того чтобы объект мог перемещаться в пространстве
+	// For an object to move through space
 	SetRootComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main")));
 }
 
@@ -22,6 +22,5 @@ void AMainPawn::Tick(float DeltaTime)
 void AMainPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 

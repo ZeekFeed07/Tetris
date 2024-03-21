@@ -13,10 +13,26 @@
 #define DEACTIVATED false
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMainManager, All, All)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateBP);
 
-using Coord = Chaos::Pair<int32, int32>;
+USTRUCT(Blueprintable)
+struct FCoord
+{
+	GENERATED_BODY()
 
-// Тип фигуры
+	UPROPERTY(BlueprintReadWrite)
+	int32 First;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Second;
+
+	
+	FCoord(int32 first = 0, int32 second = 0) : First(first), Second(second)
+	{
+	}
+};
+
+// Type of figure
 UENUM(BlueprintType)
 enum class EFigureType : uint8
 {
@@ -28,7 +44,7 @@ enum class EFigureType : uint8
 	L_TYPE,
 	L_TYPE_M  // Mirrored
 };
-// Нормаль фигуры
+// Figure normals
 UENUM(BlueprintType)
 enum class EFigureDirection : uint8
 {
@@ -58,13 +74,14 @@ class EXPERIMENTPROJECT_API AMainManager : public AActor
 {
 	GENERATED_BODY()
 
-public:	// Constructors
+public:
 	AMainManager();
 
-protected: // Protected Methods
+protected:
 	virtual void BeginPlay() override;
 
-public:	// Public Methods
+public:
+
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void StartGame();
@@ -75,14 +92,15 @@ public:	// Public Methods
 
 	virtual void UpdateFigure();
 
-	virtual void AddFigureToField(const Coord StartCoords = Coord(0, 0));
+	virtual void AddFigureToField(const FCoord StartCoords = FCoord(0, 0));
 
-	UFUNCTION() // Макрос нужен для таймера
+	UFUNCTION() // Macro for timer
 	virtual void DropFigure();
 
 	virtual bool IsIntersect(EFigureDirection MovingDirection);
 
-	virtual bool CoordsFromType(EFigureType Type, TArray<Coord>& NewFigure, Coord& Pivot);
+	UFUNCTION(BlueprintCallable)
+	virtual bool CoordsFromType(EFigureType Type, TArray<FCoord>& NewFigure, FCoord& Pivot);
 
 	virtual void SelectFigure(const EFigureType Type, const EFigureDirection Direction = EFigureDirection::TOP);
 
@@ -90,11 +108,16 @@ public:	// Public Methods
 
 	virtual EFigureType RandomFigure();
 
+	// ===================== Events ===================== //
+
 	virtual void HandleMovementSideways(float Delta);
 
 	virtual void HandleMovementBottom(float Delta);
 
 	virtual void HandleMovementRotate();
+
+	UPROPERTY(BlueprintAssignable)
+	FDelegateBP FigureSelected;
 
 	// ===================== Getters ===================== //
 	UFUNCTION(BlueprintCallable)
@@ -106,15 +129,22 @@ public:	// Public Methods
 	UFUNCTION(BlueprintCallable)
 	virtual float GetDroppingDelta() const;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable)	
 	virtual FStatData GetResultData() const;
+
+	UFUNCTION(BlueprintCallable)
+	virtual EFigureType GetNextFigureType() const;
+
+	UFUNCTION(BlueprintCallable)
+	virtual UMaterialInterface* GetNextMaterial() const;
+
 	// ===================== Setters ===================== //
 	virtual void SetController(APlayerController* Controller);
 
-private: // Private Methods
+private:
 	void PrintFieldInLog() const;
 
-	virtual void InitMovement(int32 DeltaY, int32 DeltaZ, bool bIsVanish);
+	virtual void InitPointer(int32 DeltaY, int32 DeltaZ, bool bIsVanish);
 
 	virtual void CheckAndClearLine();
 
@@ -122,7 +152,7 @@ private: // Private Methods
 
 	virtual void DropField(int32 Line);
 
-private: // Private Variables
+private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Main Settings")
 	bool _bIsGameActive = DEACTIVATED;
@@ -142,11 +172,11 @@ private: // Private Variables
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
 	FVector _SpawnCoordinates = FVector(0, 400.0f, 1900.0f);
 
-	UPROPERTY(EditAnywhere, Category = "Main Settings")
-	FVector _NextFigurePos = FVector(-80.0f, -600.0f, 1570.0f);
-
 	UPROPERTY(EditInstanceOnly, Category = "Main Settings")
 	TArray<UMaterialInterface*> _ListOfMaterials;
+
+	UMaterialInterface* _CurrentMaterial;
+	UMaterialInterface* _NextMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "Main Settings")
 	UStaticMesh* _BaseGeometryMesh;
@@ -172,20 +202,20 @@ private: // Private Variables
 	FTimerHandle _TileMovingTimer;
 	FTimerHandle _TimeCountingTimer;
 	
-	// Массив содержащий всю фигуру
+	// Array containing the Figure
 	TArray<ABaseGeometry*> _CurrentFigure;
-	// Ось вращения
-	Coord _CurrFigurePivot;
-	// Координаты фигуры в массиве _FieldOfGeometry
-	TArray<Coord> _FigureCoords;
+	// Rotational axis
+	FCoord _CurrFigurePivot;
+	// Array of rotation _FieldOfGeometry coordinates 
+	TArray<FCoord> _FigureCoords;
 	float _Degrees = -UE_HALF_PI;
-
-	// Массив поля фигур
+	 
+	// Matrix of all figures
 	TArray<TArray<ABaseGeometry*>> _FieldOfGeometry;
 
-	// Высота и ширина поля
+	// Field height and widht
 	const int32 _HeightOfField = 20;
 	const int32 _WidthOfField = 10;
 };
 
-Coord RotateCoord(Coord C1, Coord C2, float Angle);
+FCoord RotateCoord(FCoord C1, FCoord C2, float Angle);
